@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-# 1. Load HPPC dataset
-data = pd.read_csv("hppc_data.csv")
+BASE_DIR = Path(__file__).resolve().parent
+data = pd.read_csv(BASE_DIR / "hppc_data.csv")
+
 
 # 2. Extract global OCV-SOC lookup table
 # Option A: Take the voltage at the end of the initial 2-hour rest (t == 7200s)
@@ -14,6 +16,11 @@ rest_mask = (np.abs(data["current"]) < 0.01) & (data["time"] <= 7200)
 ocv_summary = data[rest_mask].groupby("soc_point")["voltage"].last().reset_index()
 ocv_summary.columns = ["soc", "ocv"]
 ocv_summary = ocv_summary.sort_values("soc").reset_index(drop=True)
+
+# Export the extracted OCV table for Chen2020
+ocv_summary.to_csv(BASE_DIR / "ocv_soc_table.csv", index=False)
+print(f"Saved extracted OCV table to: {BASE_DIR / 'ocv_soc_table.csv'}")
+print(ocv_summary.to_string(index=False))
 
 ocv_interp = interp1d(ocv_summary["soc"], ocv_summary["ocv"], kind="cubic", fill_value="extrapolate")
 # 3. Define target SOC points for detailed pulse comparison
@@ -141,5 +148,5 @@ ax4.grid(True)
 ax4.legend(loc="lower right", fontsize=8.5)
 
 plt.tight_layout()
-plt.savefig("hppc_soc_breakdown.png", dpi=300)
+plt.savefig(BASE_DIR / "hppc_soc_breakdown.png", dpi=300)
 plt.show()

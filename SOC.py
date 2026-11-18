@@ -3,10 +3,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # 1. Inspect your loaded tables first to confirm Chen2020 alignment
-ocv_lut = pd.read_csv("ocv_soc_table.csv").sort_values("soc")
-params_df = pd.read_csv("params_1rc.csv").sort_values("soc")
+ocv_lut = pd.read_csv(BASE_DIR / "ocv_soc_table.csv").sort_values("soc")
+params_df = pd.read_csv(BASE_DIR / "params_1rc.csv").sort_values("soc")
 
 print("--- Loaded OCV Table ---")
 print(ocv_lut.to_string(index=False))
@@ -59,9 +62,9 @@ def run_ekf_soc(time, current, voltage, q_nom_ah, soc_guess_init):
     x = np.array([soc_guess_init, 0.0])
     soc_est[0] = x[0]
 
-    # Key Fix: Q[0,0] = 1e-10 trusts Coulomb counting; P[0,0] = 2e-2 fixes initial error fast
+    # Key Fix: Q[0,0] = 1e-7 allows dynamic tracking; P[0,0] = 2e-2 fixes initial error fast
     P = np.diag([2e-2, 1e-4])
-    Q = np.diag([1e-10, 1e-6])
+    Q = np.diag([1e-7, 1e-5])
     R = np.array([[1e-3]])
 
     q_nom_coulombs = q_nom_ah * 3600.0
@@ -121,4 +124,6 @@ axs[1].set_ylabel("SOC Error (%)")
 axs[1].set_xlabel("Time (minutes)")
 axs[1].grid(True, alpha=0.6)
 plt.tight_layout()
+plt.savefig(BASE_DIR / "soc_estimation_verification.png", dpi=300)
+print(f"Plot saved to: {BASE_DIR / 'soc_estimation_verification.png'}")
 plt.show()

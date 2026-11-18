@@ -2,11 +2,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # 1. Load dataset, identified 1-RC parameters, and OCV lookup table
-data = pd.read_csv("hppc_data.csv")
-params_df = pd.read_csv("params_1rc.csv")
-ocv_lut = pd.read_csv("ocv_soc_table.csv")
+data = pd.read_csv(BASE_DIR / "hppc_data.csv")
+params_df = pd.read_csv(BASE_DIR / "params_1rc.csv")
+ocv_lut = pd.read_csv(BASE_DIR / "ocv_soc_table.csv")
 
 ocv_fn = interp1d(
     ocv_lut["soc"], ocv_lut["ocv"], kind="cubic", fill_value="extrapolate"
@@ -94,7 +97,8 @@ print(f"Overall Mean RMSE across all SOCs : {metrics_df['RMSE (mV)'].mean():.3f}
 print(f"Worst-Case Peak Error             : {metrics_df['Max Error (mV)'].max():.3f} mV (at {metrics_df.loc[metrics_df['Max Error (mV)'].idxmax(), 'SOC (%)']}% SOC)")
 print("=" * 78 + "\n")
 
-metrics_df.to_csv("validation_metrics.csv", index=False)
+metrics_df.to_csv(BASE_DIR / "validation_metrics.csv", index=False)
+print(f"Saved metrics to: {BASE_DIR / 'validation_metrics.csv'}")
 
 # 4. Plot Voltage Comparison + Zoomed Millivolt Residual Error Subplots
 target_socs = [0.1, 0.3, 0.6, 0.9]
@@ -135,5 +139,6 @@ for idx, soc_val in enumerate(available_targets):
     ax_e.grid(True, alpha=0.6)
 
 plt.tight_layout()
-plt.savefig("ecm_validation_with_errors.png", dpi=300)
+plt.savefig(BASE_DIR / "ecm_validation_with_errors.png", dpi=300)
+print(f"Saved plot to: {BASE_DIR / 'ecm_validation_with_errors.png'}")
 plt.show()

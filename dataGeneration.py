@@ -1,6 +1,10 @@
 import pybamm
 import numpy as np
 import pandas as pd
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # 1. Load model and parameters
 model = pybamm.lithium_ion.SPM()
@@ -51,5 +55,5 @@ for soc_init in soc_points:
     all_data.append(df)
 
 data = pd.concat(all_data, ignore_index=True)
-data.to_csv("hppc_data.csv", index=False)
+data.to_csv(BASE_DIR / "hppc_data.csv", index=False)
 print(data.head())
