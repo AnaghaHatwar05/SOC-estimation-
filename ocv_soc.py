@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
@@ -7,12 +8,14 @@ from scipy.interpolate import interp1d
 data = pd.read_csv("hppc_data.csv")
 
 # 2. Extract global OCV-SOC lookup table
-rest_mask = np.abs(data["current"]) < 0.01
-ocv_summary = data[rest_mask].groupby("soc_point")["voltage"].mean().reset_index()
+# Option A: Take the voltage at the end of the initial 2-hour rest (t == 7200s)
+# This avoids averaging transient polarization from the 40s post-pulse rests
+rest_mask = (np.abs(data["current"]) < 0.01) & (data["time"] <= 7200)
+ocv_summary = data[rest_mask].groupby("soc_point")["voltage"].last().reset_index()
 ocv_summary.columns = ["soc", "ocv"]
 ocv_summary = ocv_summary.sort_values("soc").reset_index(drop=True)
-ocv_interp = interp1d(ocv_summary["soc"], ocv_summary["ocv"], kind="cubic", fill_value="extrapolate")
 
+ocv_interp = interp1d(ocv_summary["soc"], ocv_summary["ocv"], kind="cubic", fill_value="extrapolate")
 # 3. Define target SOC points for detailed pulse comparison
 target_socs = [0.1, 0.3, 0.6, 0.9]
 colors = {0.1: "tab:red", 0.3: "tab:orange", 0.6: "tab:green", 0.9: "tab:blue"}
@@ -79,21 +82,63 @@ ax3.legend(loc="lower right")
 # ---------------------------------------------------------
 # Plot 4: Global OCV vs. SOC Curve with Highlighted Points
 # ---------------------------------------------------------
+# Extract ground-truth OCV per soc_point for verification
+ocv_gt = data.groupby("soc_point")["ocv_true"].first().reset_index().sort_values("soc_point")
+
 ax4 = axs[1, 1]
 soc_dense = np.linspace(ocv_summary["soc"].min(), ocv_summary["soc"].max(), 200)
-ax4.plot(soc_dense * 100, ocv_interp(soc_dense), "k--", lw=1.5, label="OCV Curve Fit")
 
+# 1. Plot Ground-Truth OCV from PyBaMM physics
+ax4.plot(
+    ocv_gt["soc_point"] * 100,
+    ocv_gt["ocv_true"],
+    "b-",
+    lw=2.5,
+    alpha=0.6,
+    label="Ground Truth OCV (Physics)",
+)
+
+# 2. Plot Interpolated Rest-Extracted OCV Curve
+ax4.plot(
+    soc_dense * 100,
+    ocv_interp(soc_dense),
+    "k--",
+    lw=1.5,
+    label="Extracted OCV Fit (Rest)",
+)
+
+# 3. Highlight Evaluated Target SOC Operating Points (0.1, 0.3, 0.6, 0.9)
 for soc_val in target_socs:
-    ocv_v = ocv_interp(soc_val)
-    ax4.plot(soc_val * 100, ocv_v, "o", color=colors[soc_val], ms=10, label=f"Target {int(soc_val*100)}%")
-    ax4.annotate(f"{ocv_v:.3f}V", (soc_val * 100, ocv_v), textcoords="offset points", 
-                 xytext=(-15, 10), fontweight="bold", color=colors[soc_val])
+    ocv_est_v = float(ocv_interp(soc_val))
+    
+    # Find closest ground-truth OCV value to compute error in mV
+    idx_closest = (ocv_gt["soc_point"] - soc_val).abs().idxmin()
+    ocv_gt_v = float(ocv_gt.loc[idx_closest, "ocv_true"])
+    err_mv = (ocv_est_v - ocv_gt_v) * 1000
+
+    ax4.plot(
+        soc_val * 100,
+        ocv_est_v,
+        "o",
+        color=colors[soc_val],
+        ms=9,
+        zorder=5,
+        label=f"SOC {int(soc_val*100)}% (err: {err_mv:+.1f} mV)",
+    )
+    ax4.annotate(
+        f"{ocv_est_v:.3f}V",
+        (soc_val * 100, ocv_est_v),
+        textcoords="offset points",
+        xytext=(-15, 10),
+        fontweight="bold",
+        color=colors[soc_val],
+    )
 
 ax4.set_xlabel("State of Charge (%)")
 ax4.set_ylabel("Equilibrium OCV (V)")
-ax4.set_title("4. Full OCV Curve & Evaluated SOC Operating Points")
+ax4.set_title("4. OCV–SOC Curve: Rest Extraction vs. Ground Truth")
 ax4.grid(True)
-ax4.legend(loc="lower right")
+ax4.legend(loc="lower right", fontsize=8.5)
 
 plt.tight_layout()
 plt.savefig("hppc_soc_breakdown.png", dpi=300)
