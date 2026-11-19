@@ -129,7 +129,7 @@ for soc_pt in soc_points:
 
 metrics_df = pd.DataFrame(metrics)
 print("\n" + "=" * 86)
-print("       1-RC vs 2-RC (DAS & SAMANTA) ECM PARAMETER VALIDATION COMPARISON")
+print("       1-RC vs 2-RC  ECM PARAMETER VALIDATION COMPARISON")
 print("=" * 86)
 print(metrics_df.to_string(index=False))
 print("-" * 86)
@@ -153,7 +153,7 @@ for idx, soc_val in enumerate(available_targets):
 
     ax.plot(tr["t_rel"], tr["V_true"], "k-", lw=2.2, label="PyBaMM Ground Truth")
     ax.plot(tr["t_rel"], tr["V_1rc"], "b--", lw=1.6, label=f"1-RC (RMSE: {tr['rmse_1rc']:.2f} mV)")
-    ax.plot(tr["t_rel"], tr["V_2rc"], "r:", lw=2.0, label=f"2-RC Das & Samanta (RMSE: {tr['rmse_2rc']:.2f} mV)")
+    ax.plot(tr["t_rel"], tr["V_2rc"], "r:", lw=2.0, label=f"2-RC (RMSE: {tr['rmse_2rc']:.2f} mV)")
 
     ax.set_title(f"SOC {int(soc_val*100)}% Pulse Response Comparison", fontweight="bold")
     ax.set_xlabel("Pulse Window Time (s)")

@@ -96,6 +96,8 @@ ax3.legend(loc="lower right")
 # ---------------------------------------------------------
 # Extract ground-truth OCV per soc_point for verification
 ocv_gt = data.groupby("soc_point")["ocv_true"].first().reset_index().sort_values("soc_point")
+soc_points = np.arange(0.1, 1.0, 0.1)
+ocv_points = ocv_interp(soc_points)
 
 ax4 = axs[1, 1]
 soc_dense = np.linspace(ocv_summary["soc"].min(), ocv_summary["soc"].max(), 200)
@@ -119,32 +121,16 @@ ax4.plot(
     label="Extracted OCV Fit (Rest)",
 )
 
-# 3. Highlight Evaluated Target SOC Operating Points (0.1, 0.3, 0.6, 0.9)
-for soc_val in target_socs:
-    ocv_est_v = float(ocv_interp(soc_val))
-    
-    # Find closest ground-truth OCV value to compute error in mV
-    idx_closest = (ocv_gt["soc_point"] - soc_val).abs().idxmin()
-    ocv_gt_v = float(ocv_gt.loc[idx_closest, "ocv_true"])
-    err_mv = (ocv_est_v - ocv_gt_v) * 1000
-
-    ax4.plot(
-        soc_val * 100,
-        ocv_est_v,
-        "o",
-        color=colors[soc_val],
-        ms=9,
-        zorder=5,
-        label=f"SOC {int(soc_val*100)}% (err: {err_mv:+.1f} mV)",
-    )
-    ax4.annotate(
-        f"{ocv_est_v:.3f}V",
-        (soc_val * 100, ocv_est_v),
-        textcoords="offset points",
-        xytext=(-15, 10),
-        fontweight="bold",
-        color=colors[soc_val],
-    )
+# 3. Mark extracted OCV values at every SOC point from 0.1 to 0.9
+ax4.plot(
+    soc_points * 100,
+    ocv_points,
+    "o",
+    color="tab:red",
+    ms=6,
+    zorder=5,
+    label="Extracted OCV points (10% SOC steps)",
+)
 
 ax4.set_xlabel("State of Charge (%)")
 ax4.set_ylabel("Equilibrium OCV (V)")
