@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 1. Load HPPC dataset and extracted Chen2020 OCV table
 data = pd.read_csv(BASE_DIR / "hppc_data.csv")
@@ -51,7 +51,7 @@ def identify_1rc(V_L, I_L, V_oc, T):
 # "Estimation of Equivalent Circuit Model Parameters for a Generic Battery
 #  Using Least-Square Method"
 # ==============================================================================
-def identify_2rc_das_samanta(V_L, I_L, V_oc, T):
+def identify_2rc(V_L, I_L, V_oc, T):
     """
     Identifies 2-RC parameters (R0, R1, C1, tau1, R2, C2, tau2) using
     second-order ARX Least Squares and analytical inverse Tustin transformation.
@@ -166,7 +166,7 @@ for soc_pt, grp in data.groupby("soc_point"):
     results_1rc.append(p1)
 
     # 2-RC Identification (Das & Samanta Method)
-    p2 = identify_2rc_das_samanta(V_L, I_L, V_oc, T=Ts)
+    p2 = identify_2rc(V_L, I_L, V_oc, T=Ts)
     p2["soc"] = soc_pt
     results_2rc.append(p2)
 

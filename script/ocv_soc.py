@@ -5,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 data = pd.read_csv(BASE_DIR / "hppc_data.csv")
 
 
@@ -39,11 +39,16 @@ for soc_val in target_socs:
     df_soc = data[soc_mask].copy()
     
     if not df_soc.empty:
-        # Align time relative to start of the pulse sequence for this SOC
-        t_rel = df_soc["time"] - df_soc["time"].iloc[0] if "time" in df_soc.columns else df_soc.index - df_soc.index[0]
-        ax1.plot(t_rel, df_soc["voltage"], label=f"SOC {int(soc_val*100)}%", color=colors[soc_val], lw=1.8)
+        pulse_data = df_soc[df_soc["time"] >= 7000]
+        ax1.plot(
+            pulse_data["time"],
+            pulse_data["voltage"],
+            label=f"SOC {int(soc_val*100)}%",
+            color=colors[soc_val],
+            lw=1.8,
+        )
 
-ax1.set_xlabel("Relative Pulse Time (s)")
+ax1.set_xlabel("Time (s)")
 ax1.set_ylabel("Terminal Voltage (V)")
 ax1.set_title("1. HPPC Pulse Voltage Response by SOC")
 ax1.grid(True)

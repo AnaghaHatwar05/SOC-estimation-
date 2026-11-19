@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 1. Load dataset, identified 1-RC parameters, and OCV lookup table
 data = pd.read_csv(BASE_DIR / "hppc_data.csv")
