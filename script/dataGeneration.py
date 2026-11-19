@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 1. Load model and parameters
 model = pybamm.lithium_ion.SPM()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 1. Inspect your loaded tables first to confirm Chen2020 alignment
 ocv_lut = pd.read_csv(BASE_DIR / "ocv_soc_table.csv").sort_values("soc")
